@@ -1,6 +1,8 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useState } from 'react';
 import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { MaterialCommunityIcons } from 'react-native-vector-icons';
+import { Camera, Image } from 'expo-camera';
 
 export default function AppCamera() {
   const [facing, setFacing] = useState('back');
@@ -52,10 +54,13 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     backgroundColor: 'transparent',
-    margin: 64,
+    margin: 15,
+    position: 'absolute', // Make the button container absolute
+    bottom: 5, // Position it 20px from the bottom
+    right: 5,
   },
   text: {
-    fontSize: 24,
+    fontSize: 36,
     fontWeight: 'bold',
     color: 'white',
   },

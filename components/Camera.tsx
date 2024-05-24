@@ -4,7 +4,9 @@ import { Button, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { FontAwesome5 } from '@expo/vector-icons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Fontisto from '@expo/vector-icons/Fontisto';
-
+import MlkitOcr from 'react-native-mlkit-ocr';
+import * as MediaLibrary from 'expo-media-library';
+// import * as Permissions from "expo-permissions";
 
 export default function AppCamera() {
   // @ts-ignore: just being lazy with types here
@@ -14,6 +16,32 @@ export default function AppCamera() {
   const [pictureSizes, setPictureSizes] = useState<string[]>([]);
   const [selectedSize, setSelectedSize] = useState(undefined);
 
+  const savePhoto = async (uri) => {
+    try {
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Sorry, we need camera roll permissions to save photos!');
+        return;
+      }
+      await MediaLibrary.saveToLibraryAsync(uri);
+    } catch (error) {
+      console.log(error!.message)
+      alert(`An error occurred: ${error.message}`);
+    }
+  };
+  
+
+  const extractTextFromPhoto = async (uri) => {
+    try {
+      console.log(`uri : ${uri}`);
+      const resultFromFile = await MlkitOcr.detectFromUri(uri);
+      alert(resultFromFile)
+      console.log(resultFromFile)
+    } catch (error) {
+      console.log(error!.message)
+      alert(`An error occurred: ${error.message}`);
+    }
+  };
 
   if (!permission) {
     // Camera permissions are still loading.
@@ -54,8 +82,8 @@ export default function AppCamera() {
         <View style={styles.cameraPanel}>
           <TouchableOpacity style={styles.captureButton} onPress={async () => {
             const photo = await cameraRef.current?.takePictureAsync();
-            alert(`photo captured with dimensions: ${photo!.width} x ${photo!.height}`);
-            console.log(JSON.stringify(photo));
+            savePhoto(photo?.uri)
+            extractTextFromPhoto(photo?.uri)
           }}>
             <Fontisto name="camera" size={30} color="black" />
           </TouchableOpacity>

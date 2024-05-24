@@ -1,6 +1,10 @@
 import { CameraView, CameraProps, useCameraPermissions } from "expo-camera";
 import { useState, useEffect, useRef } from "react";
 import { Button, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FontAwesome5 } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Fontisto from '@expo/vector-icons/Fontisto';
+
 
 export default function AppCamera() {
   // @ts-ignore: just being lazy with types here
@@ -34,56 +38,73 @@ export default function AppCamera() {
 
   return (
     <View style={styles.container}>
-        <CameraView
-          style={styles.camera}
-          facing={facing}
-          ref={cameraRef}
-          pictureSize={selectedSize}
-        >
-        </CameraView>     
+      <CameraView style={styles.camera} facing={facing} ref={cameraRef}>
+        {/* Overlap the camera preview with a transparent button container for visual appeal */}
+        <TouchableOpacity style={styles.buttonContainer} onPress={() => { }}>
+          {/* Empty onPress handler to prevent unnecessary actions */}
+        </TouchableOpacity>
 
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={toggleCameraFacing}>
-            <Text style={styles.text}>Flip Camera</Text>
+        {/* Add the control buttons directly inside the CameraView */}
+        <View style={styles.flipPanel}>
+          <TouchableOpacity style={styles.flipButton} onPress={toggleCameraFacing}>
+            <MaterialIcons name="flip-camera-ios" size={30} color="black" />
           </TouchableOpacity>
         </View>
 
-        <Button
-          title="Take Picture"
-          onPress={async () => {
+        <View style={styles.cameraPanel}>
+          <TouchableOpacity style={styles.captureButton} onPress={async () => {
             const photo = await cameraRef.current?.takePictureAsync();
             alert(`photo captured with dimensions: ${photo!.width} x ${photo!.height}`);
             console.log(JSON.stringify(photo));
-          }}
-        />
-      </View>
+          }}>
+            <Fontisto name="camera" size={30} color="black" />
+          </TouchableOpacity>
+        </View>
+        
+      </CameraView>
+    </View>
+
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
-    height: '100%'
+    flex: 1,
   },
   camera: {
-    width: '100%',
-    height: '80%'
+    flex: 1,
   },
   buttonContainer: {
-    flex: 1,
-    flexDirection: "row",
-    backgroundColor: "transparent",
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
-  button: {
-    flex: 1,
-    alignSelf: "flex-end",
-    alignItems: "center",
+  flipPanel: {
+    position: 'absolute',
+    marginTop:'15%',
+    right: '1%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
   },
-  text: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "white",
+  cameraPanel: {
+    position: 'absolute',
+    bottom: 30, // Adjust as needed
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignSelf:'center',
+    paddingHorizontal: 20,
   },
+  flipButton: {
+    backgroundColor: 'grey',
+    padding: 5,
+    borderRadius: 20,
+  },
+  captureButton: {
+    backgroundColor: 'yellow',
+    padding: 7,
+    borderRadius: 20,
+  }
 });

@@ -1,10 +1,10 @@
 import { CameraView, CameraProps, useCameraPermissions } from "expo-camera";
 import { useState, useEffect, useRef } from "react";
-import { Button, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Button, StyleSheet, Text, TouchableOpacity, View, Alert } from "react-native";
 import { FontAwesome5 } from '@expo/vector-icons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Fontisto from '@expo/vector-icons/Fontisto';
-import MlkitOcr from 'react-native-mlkit-ocr';
+import MlkitOcr, { MlkitOcrResult } from 'react-native-mlkit-ocr';
 import * as MediaLibrary from 'expo-media-library';
 // import * as Permissions from "expo-permissions";
 
@@ -14,34 +14,44 @@ export default function AppCamera() {
   const [facing, setFacing] = useState<CameraProps["facing"]>("back");
   const [permission, requestPermission] = useCameraPermissions();
   const [pictureSizes, setPictureSizes] = useState<string[]>([]);
-  const [selectedSize, setSelectedSize] = useState(undefined);
 
-  const savePhoto = async (uri) => {
+  const saveAndReadPhoto = async (uri) => {
     try {
+      // Request camera roll permissions
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== 'granted') {
-        alert('Sorry, we need camera roll permissions to save photos!');
+        Alert.alert('Permission required', 'Sorry, we need camera roll permissions to save photos!');
         return;
       }
-      await MediaLibrary.saveToLibraryAsync(uri);
+  
+      // Save the photo to the media library
+      const asset = await MediaLibrary.createAssetAsync(uri);
+  
+      // Log the saved asset for debugging purposes
+      console.log('Saved asset:', asset);
+  
+      // Check if MlkitOcr is properly initialized
+      if (!MlkitOcr || typeof MlkitOcr.detectFromFile !== 'function') {
+        throw new Error('MlkitOcr is not initialized correctly.');
+      }
+  
+      // Perform OCR on the saved photo
+      const resultFromFile = await MlkitOcr.detectFromFile(asset.uri);
+  
+      // Alert the result of the OCR
+      Alert.alert('OCR Result', resultFromFile);
+  
+      // Log the OCR result for debugging purposes
+      console.log('OCR result:', resultFromFile);
+  
     } catch (error) {
-      console.log(error!.message)
-      alert(`An error occurred: ${error.message}`);
+      // Log and alert the error
+      console.error('An error occurred:', error);
+      Alert.alert('An error occurred', error.message);
     }
   };
   
-
-  const extractTextFromPhoto = async (uri) => {
-    try {
-      console.log(`uri : ${uri}`);
-      const resultFromFile = await MlkitOcr.detectFromUri(uri);
-      alert(resultFromFile)
-      console.log(resultFromFile)
-    } catch (error) {
-      console.log(error!.message)
-      alert(`An error occurred: ${error.message}`);
-    }
-  };
+  
 
   if (!permission) {
     // Camera permissions are still loading.
@@ -82,8 +92,8 @@ export default function AppCamera() {
         <View style={styles.cameraPanel}>
           <TouchableOpacity style={styles.captureButton} onPress={async () => {
             const photo = await cameraRef.current?.takePictureAsync();
-            savePhoto(photo?.uri)
-            extractTextFromPhoto(photo?.uri)
+            saveAndReadPhoto(photo?.uri)
+            // extractTextFromPhoto(photo?.uri)
           }}>
             <Fontisto name="camera" size={30} color="black" />
           </TouchableOpacity>

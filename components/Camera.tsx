@@ -1,11 +1,12 @@
-import { CameraView, CameraProps, useCameraPermissions } from "expo-camera";
-import { useState, useEffect, useRef } from "react";
-import { Button, StyleSheet, Text, TouchableOpacity, View, Alert } from "react-native";
-import { FontAwesome5 } from '@expo/vector-icons';
+import {CameraView, CameraProps, useCameraPermissions } from "expo-camera";
+import { useState, useRef } from "react";
+import { Button, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Fontisto from '@expo/vector-icons/Fontisto';
-import MlkitOcr, { MlkitOcrResult } from 'react-native-mlkit-ocr';
+import MlkitOcr from 'react-native-mlkit-ocr';
 import * as MediaLibrary from 'expo-media-library';
+import * as ImagePicker from 'expo-image-picker';
+
 
 export default function AppCamera() {
   // @ts-ignore: just being lazy with types here
@@ -13,9 +14,13 @@ export default function AppCamera() {
   const [facing, setFacing] = useState<CameraProps["facing"]>("back");
   const [permission, requestPermission] = useCameraPermissions();
   const [pickedImagePath, setPickedImagePath] = useState('');
+  const [image, setImage] = useState(null);
 
-  const saveAndReadPhoto = async (uri) => {
+  const saveAndReadPhoto = async () => {
     try {
+
+      const photo = await cameraRef.current?.takePictureAsync();
+
       // Request camera roll permissions
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== 'granted') {
@@ -24,29 +29,35 @@ export default function AppCamera() {
       }
   
       // Save the photo to the media library
-      const asset = await MediaLibrary.createAssetAsync(uri);
+      const asset = await MediaLibrary.createAssetAsync(photo.uri);
+      
   
-      // Log the saved asset for debugging purposes
-      setPickedImagePath(asset.uri);
+      const pickedImage = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+
+      alert("Image Picker Result:", pickedImage); // Log the entire result for debugging
+
       // Check if MlkitOcr is properly initialized
       if (!MlkitOcr || typeof MlkitOcr.detectFromUri !== 'function') {
         throw new Error('MlkitOcr is not initialized correctly.');
       }
-      alert(asset.uri)
     
       // Perform OCR on the saved photo
-      const resultFromFile = await MlkitOcr.detectFromUri(pickedImagePath);
+      const ocrResult = await MlkitOcr.detectFromUri(pickedImage.assets[0].uri);
   
       // Alert the result of the OCR
-      alert(resultFromFile);
-  
-      // Log the OCR result for debugging purposes
-      // Alert.alert('OCR result:', resultFromFile);
+      alert('Showing OCR result');
+      alert(JSON.stringify(ocrResult));
   
     } catch (error) {
       // Log and alert the error
-      alert('An error occurred:', error);
-      alert('An error occurred', error.message);
+      alert(JSON.stringify(error, Object.getOwnPropertyNames(error)))
+      console.log(JSON.stringify(error, Object.getOwnPropertyNames(error)))
     }
   };
   
@@ -89,11 +100,7 @@ export default function AppCamera() {
         </View>
 
         <View style={styles.cameraPanel}>
-          <TouchableOpacity style={styles.captureButton} onPress={async () => {
-            const photo = await cameraRef.current?.takePictureAsync();
-            saveAndReadPhoto(photo?.uri)
-            // extractTextFromPhoto(photo?.uri)
-          }}>
+          <TouchableOpacity style={styles.captureButton} onPress={saveAndReadPhoto}>
             <Fontisto name="camera" size={30} color="black" />
           </TouchableOpacity>
         </View>

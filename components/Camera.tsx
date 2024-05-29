@@ -15,6 +15,12 @@ export default function AppCamera() {
   const [permission, requestPermission] = useCameraPermissions();
   const [pickedImagePath, setPickedImagePath] = useState('');
   const [image, setImage] = useState(null);
+  
+  const [extractedText, setExtractedText] = useState('');
+  const [carNumberLines, setCarNumberLines] = useState<string[]>([]);
+  const [carNumbers, setCarNumbers] = useState<string[]>([]);
+
+  const carNumberPattern = /\b[A-Za-z0-9 ]{1,6}\b/g;
 
   const saveAndReadPhoto = async () => {
     try {
@@ -50,10 +56,19 @@ export default function AppCamera() {
       // Perform OCR on the saved photo
       const ocrResult = await MlkitOcr.detectFromUri(pickedImage.assets[0].uri);
   
-      // Alert the result of the OCR
-      alert('Showing OCR result');
-      alert(JSON.stringify(ocrResult));
-  
+      const text = ocrResult.map(block => block.text).join('\n');
+
+      setExtractedText(text)
+     
+      const linesWithCarNumbers = extractedText.split('\n').filter(line => carNumberPattern.test(line));
+      setCarNumberLines(linesWithCarNumbers)
+
+      const carNumberMatches = linesWithCarNumbers
+        .flatMap(line => line.match(carNumberPattern) || [])
+        .filter(Boolean);
+
+      setCarNumbers(carNumberMatches);
+
     } catch (error) {
       // Log and alert the error
       alert(JSON.stringify(error, Object.getOwnPropertyNames(error)))
@@ -106,8 +121,21 @@ export default function AppCamera() {
         </View>
         
       </CameraView>
-    </View>
+       {extractedText !== '' && (
+        <View style={styles.container}>
+          <Text>{extractedText}</Text>
+        </View>
+      )}
 
+      {carNumbers.length > 0 && (
+        <View style={styles.container}>
+          <Text>Detected Car Numbers:</Text>
+          {carNumbers.map((number, index) => (
+            <Text key={index}>{number}</Text>
+          ))}
+        </View>
+      )}
+    </View>
   );
 }
 
